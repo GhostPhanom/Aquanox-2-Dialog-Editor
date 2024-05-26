@@ -1,16 +1,142 @@
 import pathlib
 import os
 import time
+import pygame
 
 aquanox_basepath = "C:/Games/AquaNox 2 Revelation/Aquanox-2-Dialog-Editor"#Attention windows path but used/ instead of \
 locale = "de"
 export_basepath = "C:/Games/AquaNox 2 Revelation/Aquanox-2-Dialog-Editor/export"
+
+class Sdialog_List:
+	filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/sdialog.des")
+	table = {}
+
+	def GetObjectwithKey(self, key: int):
+		#print(f"ProvidedKey:{key}")
+		for table_entry in self.table:
+			if self.table[table_entry].Key == key:
+				return self.table[table_entry]
+		else:
+			return Room()
+
+	def Export(self):
+		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
+		outputpath_des = pathlib.Path(export_basepath, currenttimepath, "dat/sty/sdialog.des")
+
+		outputpath_des.parent.mkdir(exist_ok=True, parents=True)
+
+		output_des = "[Table]\n"
+		output_des += "{\n"
+		output_des += "\n"
+
+		for entry in self.table.keys():
+			char = self.table[entry]
+			output_des += f"    [{entry}]\n"
+			output_des += "    {\n"
+			if char.Comment_des != "NO .DES COMMENT":
+				output_des += f"        //{char.Comment_des}\n"
+			output_des += f'        Key = {char.Key}\n'
+			output_des += f'        Type = "{char.Type}"\n'
+			output_des += f'        Room = {char.Room}\n'
+			output_des += "    }\n"
+			output_des += "\n"
+		output_des += "}\n"
+		#print(output_des)
+		outputpath_des.write_text(output_des, encoding = 'cp1252')
+
+class Sdialog:
+	Key = -1
+	Type = "-1"
+	Room = -1
+	Comment_des = "NO .DES COMMENT"
+
+	def Print(self):
+		print(f"Key: {self.Key}")
+		print(f"Type: {self.Type}")
+		print(f"Room: {self.Room}")
+		print(f"Comment_des: {self.Comment_des}")
+
+def ParseSdialogs(listobj):
+	if hasattr(listobj, "filepath_des"):
+		file_des = open(listobj.filepath_des, 'r')
+
+	Lines = file_des.readlines()
+	readstate = "TableStart"
+	tempchar = Sdialog()
+	entryname = ""
+	for line in Lines:
+		line = line.lstrip()
+		line = line.rstrip()
+		if len(line) == 0: #Empty Line
+			continue
+		if readstate == "TableStart":#Search for [Table]
+			if "[Table]" in line:
+				readstate = "TableOpen"
+				continue
+		if readstate == "TableOpen":#Search for { after [Table]
+			if line == "{":
+				readstate = "SearchTableEntry"
+				continue
+		if readstate == "SearchTableEntry":#Search for [
+			if line[0] == "[":
+				line = line.split("[")[1]
+				line = line.split("]")[0]
+				entryname = line
+				readstate = "TableEntryOpen"
+				continue
+		if readstate == "SearchTableEntry":#Search for last }
+			if line[0] == "}":
+				readstate = "TableClosed"
+				break#End
+		if readstate == "TableEntryOpen":
+			if line == "{":
+				readstate = "TableEntryData"
+				continue
+		if readstate == "TableEntryData":
+			if "//" in line:
+				tempchar.Comment_des = line.split("/")[2]
+			if "Key = " in line:
+				tempchar.Key = int(line.split(" ")[2])
+			if "Type = " in line:
+				tempchar.Type = line.split("\"")[1]
+			if "Room = " in line:
+				tempchar.Room = int(line.split(" ")[2])
+			if line == "}":
+				listobj.table[entryname] = tempchar
+				tempchar = Sdialog()
+				entryname = ""
+				readstate = "SearchTableEntry"
+				continue
+
+	if entryname != "":
+		print("Current TableEntry was not closed")
+		exit()
+	if readstate != "TableClosed":
+		print("Search did not find closing bracket")
+		exit()
+	file_des.close()
 
 class Stake_List:
 	filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/stake.des")
 	filepath_loc = pathlib.Path(aquanox_basepath, "dat/sty/", locale, "stake.loc")
 	table = {}
 	last_key = -1
+
+	def GetObjectwithKey(self, key: int):
+		#print(f"ProvidedKey:{key}")
+		for table_entry in self.table:
+			if self.table[table_entry].Key == key:
+				return self.table[table_entry]
+		else:
+			return Stake()
+
+	def GetDialogeStakeEntrys(self, key: int):
+		stake_list = []
+		#print(f"ProvidedKey:{key}")
+		for table_entry in self.table:
+			if self.table[table_entry].Dialog == key:
+				stake_list.append(self.table[table_entry])
+		return stake_list
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
@@ -59,7 +185,6 @@ class Stake_List:
 		output_loc += "}\n"
 		#print(output_loc)
 		outputpath_loc.write_text(output_loc, encoding = 'cp1252')
-
 
 class Stake:
 	Key = -1
@@ -122,20 +247,20 @@ def ParseStakes(listobj):
 			if "//" in line:
 				tempchar.Comment_des = line.split("/")[2]
 			if "Key = " in line:
-				tempchar.Key = line.split(" ")[2]
+				tempchar.Key = int(line.split(" ")[2])
 			if "Dialog = " in line:
-				tempchar.Dialog = line.split(" ")[2]
+				tempchar.Dialog = int(line.split(" ")[2])
 			if "Person = " in line:
-				tempchar.Person = line.split(" ")[2]
+				tempchar.Person = int(line.split(" ")[2])
 			if "Wav = " in line:
 				tempchar.Wav = line.split("\"")[1]
 				if len(line.split("\"")[1]) > 0:
-					tempchar.WavPath = pathlib.Path(aquanox_basepath, line.split("\"")[1])
+					tempchar.WavPath = pathlib.Path(aquanox_basepath, "sfx/speech/", locale, line.split("\"")[1] + ".ogg")
 			if "Mood = " in line:
-				tempchar.Mood = line.split(" ")[2]
+				tempchar.Mood = int(line.split(" ")[2])
 			if line == "}":
 				listobj.table[entryname] = tempchar
-				tempchar = Character()
+				tempchar = Stake()
 				entryname = ""
 				readstate = "SearchTableEntry"
 				continue
@@ -189,7 +314,7 @@ def ParseStakes(listobj):
 				else:
 					tempchar.Comment_loc = line.split("/")[2] #Needed if table number is not stable
 			if "Key = " in line:
-				key = line.split(" ")[2]
+				key = int(line.split(" ")[2])
 				if key != tempchar.Key:
 					print("Key in Tablekey in .loc does not match Key in Tablekey in .des")
 					print(tempchar)
@@ -199,7 +324,7 @@ def ParseStakes(listobj):
 				tempchar.Text = line.split("\"")[1]
 			if line == "}":
 				#listobj.table[entryname] = tempchar # Not needed as the object is already in the list
-				tempchar = Character()
+				tempchar = Stake()
 				entryname = ""
 				tempcomment = ""
 				readstate = "SearchTableEntry"
@@ -209,6 +334,14 @@ def ParseStakes(listobj):
 class Mood_List:
 	filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/mood.des")
 	table = {}
+
+	def GetObjectwithKey(self, key: int):
+		#print(f"ProvidedKey:{key}")
+		for table_entry in self.table:
+			if self.table[table_entry].Key == key:
+				return self.table[table_entry]
+		else:
+			return Mood()
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
@@ -281,10 +414,10 @@ def ParseMoods(listobj):
 			if "//" in line:
 				tempchar.Comment_des = line.split("/")[2]
 			if "Key = " in line:
-				tempchar.Key = line.split(" ")[2]
+				tempchar.Key = int(line.split(" ")[2])
 			if line == "}":
 				listobj.table[entryname] = tempchar
-				tempchar = Character()
+				tempchar = Mood()
 				entryname = ""
 				readstate = "SearchTableEntry"
 				continue
@@ -301,6 +434,14 @@ class Ship_List:
 	filepath_loc = pathlib.Path(aquanox_basepath, "dat/sty/", locale, "ship.loc")
 
 	table = {}
+
+	def GetObjectwithKey(self, key: int):
+		#print(f"ProvidedKey:{key}")
+		for table_entry in self.table:
+			if self.table[table_entry].Key == key:
+				return self.table[table_entry]
+		else:
+			return Ship()
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
@@ -385,7 +526,7 @@ def ParseShips(listobj):
 			if "//" in line:
 				tempchar.Comment_des = line.split("/")[2]
 			if "Key = " in line:
-				tempchar.Key = line.split(" ")[2]
+				tempchar.Key = int(line.split(" ")[2])
 			if "Name = " in line and "RewardName = " not in line:
 				tempchar.Name = line.split("\"")[1]
 			if "RewardName = " in line:
@@ -396,7 +537,7 @@ def ParseShips(listobj):
 				tempchar.Info = line.split("\"")[1]
 			if line == "}":
 				listobj.table[entryname] = tempchar
-				tempchar = Character()
+				tempchar = Ship()
 				entryname = ""
 				readstate = "SearchTableEntry"
 				continue
@@ -412,6 +553,14 @@ def ParseShips(listobj):
 class Room_List:
 	filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/room.des")
 	table = {}
+
+	def GetObjectwithKey(self, key: int):
+		#print(f"ProvidedKey:{key}")
+		for table_entry in self.table:
+			if self.table[table_entry].Key == key:
+				return self.table[table_entry]
+		else:
+			return Room()
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
@@ -442,12 +591,14 @@ class Room:
 	Key = -1
 	Station = -1
 	Sound = "-1"
+	SoundPath = "-1"
 	Comment_des = "NO .DES COMMENT"
 
 	def Print(self):
 		print(f"Key: {self.Key}")
 		print(f"Station: {self.Station}")
 		print(f"Sound: {self.Sound}")
+		print(f"SoundPath: {self.SoundPath}")
 		print(f"Comment_des: {self.Comment_des}")
 
 def ParseRooms(listobj):
@@ -490,14 +641,15 @@ def ParseRooms(listobj):
 			if "//" in line:
 				tempchar.Comment_des = line.split("/")[2]
 			if "Key = " in line:
-				tempchar.Key = line.split(" ")[2]
+				tempchar.Key = int(line.split(" ")[2])
 			if "Station = " in line:
-				tempchar.Station = line.split(" ")[2]
+				tempchar.Station = int(line.split(" ")[2])
 			if "Sound = " in line:
 				tempchar.Sound = line.split("\"")[1]
+				tempchar.SoundPath = pathlib.Path(aquanox_basepath, line.split("\"")[1][:-4] + ".wav")
 			if line == "}":
 				listobj.table[entryname] = tempchar
-				tempchar = Character()
+				tempchar = Room()
 				entryname = ""
 				readstate = "SearchTableEntry"
 				continue
@@ -514,6 +666,14 @@ class Character_List:
 	filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/person.des")
 	filepath_loc = pathlib.Path(aquanox_basepath, "dat/sty/", locale, "person.loc")
 	table = {}
+
+	def GetObjectwithKey(self, key: int):
+		#print(f"ProvidedKey:{key}")
+		for table_entry in self.table:
+			if self.table[table_entry].Key == key:
+				return self.table[table_entry]
+		else:
+			return Character()
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
@@ -631,7 +791,7 @@ def ParseCharacters(listobj):
 			if "//" in line:
 				tempchar.Comment_des = line.split("/")[2]
 			if "Key = " in line:
-				tempchar.Key = line.split(" ")[2]
+				tempchar.Key = int(line.split(" ")[2])
 			if "ImageElf = " in line:
 				tempchar.ImageElf = line.split("\"")[1]
 				if len(line.split("\"")[1]) > 0:
@@ -698,7 +858,7 @@ def ParseCharacters(listobj):
 				else:
 					tempchar.Comment_loc = line.split("/")[2] #Needed if table number is not stable
 			if "Key = " in line:
-				key = line.split(" ")[2]
+				key = int(line.split(" ")[2])
 				if key != tempchar.Key:
 					print("Key in Tablekey in .loc does not match Key in Tablekey in .des")
 					print(tempchar)
@@ -717,6 +877,38 @@ def ParseCharacters(listobj):
 				continue
 	file_loc.close()
 		
+def PlayDialogAudio(dialogid, background=True):
+	stake_list = stakelist.GetDialogeStakeEntrys(dialogid)
+	room = roomlist.GetObjectwithKey(sdialoglist.GetObjectwithKey(dialogid).Room)
+	if len(stake_list) > 0:
+		channel_bg = pygame.mixer.Channel(0)
+
+		if background == True:
+			channel_dialog = pygame.mixer.Channel(1)
+			sound_bg = pygame.mixer.Sound(room.SoundPath)
+			sound_bg.set_volume(basevolume_bg)
+			channel_bg.play(sound_bg)
+
+		for stake in stake_list:
+			sound_stake = pygame.mixer.Sound(stake.WavPath)
+			sound_stake.set_volume(basevolume_text)
+			channel_dialog.play(sound_stake)
+			while channel_dialog.get_busy() == True:
+				if background == True and channel_bg.get_busy() == False:
+					channel_bg.play(sound_bg)
+				time.sleep(0.05)
+			time.sleep(0.6)
+
+		if background == True:
+			channel_bg.stop()
+
+	else:
+		print("stake list empty, no sound played!")
+
+basevolume_text = 10 / 100
+basevolume_bg = basevolume_text / 5 * 2
+pygame.mixer.init()#Initialize Sound
+
 
 charlist = Character_List()
 
@@ -742,7 +934,17 @@ moodlist = Mood_List()
 ParseMoods(moodlist)
 moodlist.Export()
 
+sdialoglist = Sdialog_List()
+ParseSdialogs(sdialoglist)
+sdialoglist.Export()
+
 stakelist = Stake_List()
 ParseStakes(stakelist)
-print(stakelist.table["Take3"].Mood)
 stakelist.Export()
+stakelist.GetObjectwithKey(17).Print()
+
+
+for stake in stakelist.GetDialogeStakeEntrys(18):
+	print(f"{charlist.GetObjectwithKey(stake.Person).Name}: {stake.Text}")
+
+PlayDialogAudio(173)
