@@ -3,13 +3,46 @@ import os
 import time
 import pygame
 
-aquanox_basepath = "C:/Games/AquaNox 2 Revelation/Aquanox-2-Dialog-Editor"#Attention windows path but used/ instead of \
-locale = "de"
-export_basepath = "C:/Games/AquaNox 2 Revelation/Aquanox-2-Dialog-Editor/export"
+#self.aquanox_basepath = "C:/Games/AquaNox 2 Revelation/Aquanox-2-Dialog-Editor"#Attention windows path but used/ instead of \
+#self.locale = "de"
+#self.export_basepath = "C:/Games/AquaNox 2 Revelation/Aquanox-2-Dialog-Editor/export"
 
-class Sdialog_List:
-	filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/sdialog.des")
-	table = {}
+#self.aquanox_basepath = ""
+#self.locale = ""
+#self.export_basepath = ""
+
+class FilemanagerOptions:
+	aquanox_basepath = ""
+	locale = ""
+	export_basepath = ""
+
+	def ConfigureFilemanagerOptions(self, basepath: str, game_locale: str, export_path: str):
+		print("LEL")
+		self.aquanox_basepath = basepath
+		self.locale = game_locale
+		self.export_basepath = export_path
+		print(f"Set aquanox_basepath: {self.aquanox_basepath}")
+		print(f"Set locale: {self.locale}")
+		print(f"Set export_basepath: {self.export_basepath}")
+
+class FileDataTypes:
+	aquanox_basepath = ""
+	locale = ""
+	export_basepath = ""
+
+	def __init__(self):
+		#FileOptions needs to already created by FilemanagerOptions() im current file
+		self.aquanox_basepath = FileOptions.aquanox_basepath
+		self.locale = FileOptions.locale
+		self.export_basepath = FileOptions.export_basepath
+
+
+
+class Sdialog_List(FileDataTypes):
+	def __init__(self):
+		FileDataTypes.__init__(self)
+		self.filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/sdialog.des")
+		self.table = {}
 
 	def GetObjectwithKey(self, key: int):
 		#print(f"ProvidedKey:{key}")
@@ -21,7 +54,7 @@ class Sdialog_List:
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
-		outputpath_des = pathlib.Path(export_basepath, currenttimepath, "dat/sty/sdialog.des")
+		outputpath_des = pathlib.Path(self.export_basepath, currenttimepath, "dat/sty/sdialog.des")
 
 		outputpath_des.parent.mkdir(exist_ok=True, parents=True)
 
@@ -44,7 +77,7 @@ class Sdialog_List:
 		#print(output_des)
 		outputpath_des.write_text(output_des, encoding = 'cp1252')
 
-class Sdialog:
+class Sdialog(FileDataTypes):
 	Key = -1
 	Type = "-1"
 	Room = -1
@@ -116,11 +149,13 @@ def ParseSdialogs(listobj):
 		exit()
 	file_des.close()
 
-class Stake_List:
-	filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/stake.des")
-	filepath_loc = pathlib.Path(aquanox_basepath, "dat/sty/", locale, "stake.loc")
-	table = {}
-	last_key = -1
+class Stake_List(FileDataTypes):
+	def __init__(self):
+		FileDataTypes.__init__(self)
+		self.filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/stake.des")
+		self.filepath_loc = pathlib.Path(aquanox_basepath, "dat/sty/", locale, "stake.loc")
+		self.table = {}
+		self.last_key = -1
 
 	def GetObjectwithKey(self, key: int):
 		#print(f"ProvidedKey:{key}")
@@ -140,8 +175,8 @@ class Stake_List:
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
-		outputpath_des = pathlib.Path(export_basepath, currenttimepath, "dat/sty/stake.des")
-		outputpath_loc = pathlib.Path(export_basepath, currenttimepath, "dat/sty/", locale, "stake.loc")
+		outputpath_des = pathlib.Path(self.export_basepath, currenttimepath, "dat/sty/stake.des")
+		outputpath_loc = pathlib.Path(self.export_basepath, currenttimepath, "dat/sty/", self.locale, "stake.loc")
 
 		outputpath_des.parent.mkdir(exist_ok=True, parents=True)
 
@@ -186,7 +221,7 @@ class Stake_List:
 		#print(output_loc)
 		outputpath_loc.write_text(output_loc, encoding = 'cp1252')
 
-class Stake:
+class Stake(FileDataTypes):
 	Key = -1
 	Dialog = -1
 	Person = -1
@@ -331,9 +366,11 @@ def ParseStakes(listobj):
 				continue
 	file_loc.close()
 
-class Mood_List:
-	filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/mood.des")
-	table = {}
+class Mood_List(FileDataTypes):
+	def __init__(self):
+		FileDataTypes.__init__(self)
+		self.filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/mood.des")
+		self.table = {}
 
 	def GetObjectwithKey(self, key: int):
 		#print(f"ProvidedKey:{key}")
@@ -345,7 +382,7 @@ class Mood_List:
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
-		outputpath_des = pathlib.Path(export_basepath, currenttimepath, "dat/sty/mood.des")
+		outputpath_des = pathlib.Path(self.export_basepath, currenttimepath, "dat/sty/mood.des")
 
 		outputpath_des.parent.mkdir(exist_ok=True, parents=True)
 
@@ -366,7 +403,7 @@ class Mood_List:
 		#print(output_des)
 		outputpath_des.write_text(output_des, encoding = 'cp1252')
 
-class Mood:
+class Mood(FileDataTypes):
 	Key = -1
 	Comment_des = "NO .DES COMMENT"
 
@@ -430,10 +467,11 @@ def ParseMoods(listobj):
 		exit()
 	file_des.close()
 
-class Ship_List:
-	filepath_loc = pathlib.Path(aquanox_basepath, "dat/sty/", locale, "ship.loc")
-
-	table = {}
+class Ship_List(FileDataTypes):
+	def __init__(self):
+		FileDataTypes.__init__(self)
+		self.filepath_loc = pathlib.Path(aquanox_basepath, "dat/sty/", locale, "ship.loc")
+		self.table = {}
 
 	def GetObjectwithKey(self, key: int):
 		#print(f"ProvidedKey:{key}")
@@ -445,7 +483,7 @@ class Ship_List:
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
-		outputpath_loc = pathlib.Path(export_basepath, currenttimepath, "dat/sty/", locale, "ship.loc")
+		outputpath_loc = pathlib.Path(self.export_basepath, currenttimepath, "dat/sty/", self.locale, "ship.loc")
 
 		outputpath_loc.parent.mkdir(exist_ok=True, parents=True)
 
@@ -470,7 +508,7 @@ class Ship_List:
 		#print(output_loc)
 		outputpath_loc.write_text(output_loc, encoding = 'cp1252')
 
-class Ship:
+class Ship(FileDataTypes):
 	Key = -1
 	Name = "-1"
 	RewardName = "-1"
@@ -550,9 +588,11 @@ def ParseShips(listobj):
 		exit()
 	file_loc.close()
 
-class Room_List:
-	filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/room.des")
-	table = {}
+class Room_List(FileDataTypes):
+	def __init__(self):
+		FileDataTypes.__init__(self)
+		self.filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/room.des")
+		self.table = {}
 
 	def GetObjectwithKey(self, key: int):
 		#print(f"ProvidedKey:{key}")
@@ -564,7 +604,7 @@ class Room_List:
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
-		outputpath_des = pathlib.Path(export_basepath, currenttimepath, "dat/sty/room.des")
+		outputpath_des = pathlib.Path(self.export_basepath, currenttimepath, "dat/sty/room.des")
 
 		outputpath_des.parent.mkdir(exist_ok=True, parents=True)
 
@@ -587,7 +627,7 @@ class Room_List:
 		#print(output_des)
 		outputpath_des.write_text(output_des, encoding = 'cp1252')
 
-class Room:
+class Room(FileDataTypes):
 	Key = -1
 	Station = -1
 	Sound = "-1"
@@ -662,10 +702,12 @@ def ParseRooms(listobj):
 		exit()
 	file_des.close()
 
-class Character_List:
-	filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/person.des")
-	filepath_loc = pathlib.Path(aquanox_basepath, "dat/sty/", locale, "person.loc")
-	table = {}
+class Character_List(FileDataTypes):
+	def __init__(self):
+		FileDataTypes.__init__(self)
+		self.filepath_des = pathlib.Path(aquanox_basepath, "dat/sty/person.des")
+		self.filepath_loc = pathlib.Path(aquanox_basepath, "dat/sty/", locale, "person.loc")
+		self.table = {}
 
 	def GetObjectwithKey(self, key: int):
 		#print(f"ProvidedKey:{key}")
@@ -677,8 +719,8 @@ class Character_List:
 
 	def Export(self):
 		currenttimepath = time.strftime("%Y-%m-%d-%H-%M")
-		outputpath_des = pathlib.Path(export_basepath, currenttimepath, "dat/sty/person.des")
-		outputpath_loc = pathlib.Path(export_basepath, currenttimepath, "dat/sty/", locale, "person.loc")
+		outputpath_des = pathlib.Path(self.export_basepath, currenttimepath, "dat/sty/person.des")
+		outputpath_loc = pathlib.Path(self.export_basepath, currenttimepath, "dat/sty/", self.locale, "person.loc")
 
 		outputpath_des.parent.mkdir(exist_ok=True, parents=True)
 
@@ -724,7 +766,7 @@ class Character_List:
 		outputpath_loc.write_text(output_loc, encoding = 'cp1252')
 
 
-class Character:
+class Character(FileDataTypes):
 	Key = -1
 	ImageElf = "-1"
 	ImageElfPath = "-1"
@@ -795,11 +837,11 @@ def ParseCharacters(listobj):
 			if "ImageElf = " in line:
 				tempchar.ImageElf = line.split("\"")[1]
 				if len(line.split("\"")[1]) > 0:
-					tempchar.ImageElfPath = pathlib.Path(aquanox_basepath, line.split("\"")[1])
+					tempchar.ImageElfPath = pathlib.Path(listobj.aquanox_basepath, line.split("\"")[1])
 			if "ImageMood0 = " in line:
 				tempchar.ImageMood0 = line.split("\"")[1]
 				if len(line.split("\"")[1]) > 0:
-					tempchar.ImageMood0Path = pathlib.Path(aquanox_basepath, line.split("\"")[1])
+					tempchar.ImageMood0Path = pathlib.Path(listobj.aquanox_basepath, line.split("\"")[1])
 			if "Sex = " in line:
 				tempchar.Sex = line.split("\"")[1]
 			if line == "}":
@@ -877,9 +919,13 @@ def ParseCharacters(listobj):
 				continue
 	file_loc.close()
 		
-def PlayDialogAudio(dialogid, background=True):
+def PlayDialogAudio(dialogid, stakelist, roomlist, sdialoglist, background=True):
 	stake_list = stakelist.GetDialogeStakeEntrys(dialogid)
 	room = roomlist.GetObjectwithKey(sdialoglist.GetObjectwithKey(dialogid).Room)
+
+	basevolume_text = 10 / 100
+	basevolume_bg = basevolume_text / 5 * 2
+	
 	if len(stake_list) > 0:
 		channel_bg = pygame.mixer.Channel(0)
 
@@ -905,46 +951,61 @@ def PlayDialogAudio(dialogid, background=True):
 	else:
 		print("stake list empty, no sound played!")
 
-basevolume_text = 10 / 100
-basevolume_bg = basevolume_text / 5 * 2
-pygame.mixer.init()#Initialize Sound
+
+def main():
+	pygame.mixer.init()#Initialize Sound
+
+	
 
 
-charlist = Character_List()
+	charlist = Character_List()
 
-print(charlist.filepath_des)
-print(charlist.filepath_loc)
+	print(charlist.filepath_des)
+	print(charlist.filepath_loc)
 
-ParseCharacters(charlist)
-print(charlist.table.keys())
-print(charlist.table)
-for char in charlist.table.values():
-	char.Print()
-charlist.Export()
+	ParseCharacters(charlist)
+	print(charlist.table.keys())
+	print(charlist.table)
+	for char in charlist.table.values():
+		char.Print()
+	charlist.Export()
 
-roomlist = Room_List()
-ParseRooms(roomlist)
-roomlist.Export()
+	roomlist = Room_List()
+	ParseRooms(roomlist)
+	roomlist.Export()
 
-shiplist = Ship_List()
-ParseShips(shiplist)
-shiplist.Export()
+	shiplist = Ship_List()
+	ParseShips(shiplist)
+	shiplist.Export()
 
-moodlist = Mood_List()
-ParseMoods(moodlist)
-moodlist.Export()
+	moodlist = Mood_List()
+	ParseMoods(moodlist)
+	moodlist.Export()
 
-sdialoglist = Sdialog_List()
-ParseSdialogs(sdialoglist)
-sdialoglist.Export()
+	sdialoglist = Sdialog_List()
+	ParseSdialogs(sdialoglist)
+	sdialoglist.Export()
 
-stakelist = Stake_List()
-ParseStakes(stakelist)
-stakelist.Export()
-stakelist.GetObjectwithKey(17).Print()
+	stakelist = Stake_List()
+	ParseStakes(stakelist)
+	stakelist.Export()
+	stakelist.GetObjectwithKey(17).Print()
 
 
-for stake in stakelist.GetDialogeStakeEntrys(18):
-	print(f"{charlist.GetObjectwithKey(stake.Person).Name}: {stake.Text}")
+	for stake in stakelist.GetDialogeStakeEntrys(18):
+		print(f"{charlist.GetObjectwithKey(stake.Person).Name}: {stake.Text}")
 
-PlayDialogAudio(173)
+	PlayDialogAudio(173, stakelist, roomlist, sdialoglist)
+
+
+
+aquanox_basepath = "C:/Games/AquaNox 2 Revelation/Aquanox-2-Dialog-Editor"#Attention windows path but used/ instead of \
+locale = "de"
+export_basepath = "C:/Games/AquaNox 2 Revelation/Aquanox-2-Dialog-Editor/export"
+
+FileOptions = FilemanagerOptions()
+FileOptions.ConfigureFilemanagerOptions(basepath = aquanox_basepath, game_locale = locale, export_path = export_basepath)
+
+if __name__ == "__main__":
+	print("lel")
+	main()
